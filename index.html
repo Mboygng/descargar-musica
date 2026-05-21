@@ -37,9 +37,11 @@
             <p class="log-line text-muted">// Esperando enlace...</p>
         </div>
 
-        <a href="https://routinehub.co/shortcut/4069/" target="_blank" class="btn-setup" id="ios-setup-btn" style="display: none;">
-            1. INSTALAR MOTOR EN IPHONE
-        </a>
+        <div id="ios-download-container" style="display: none; margin-top: 15px; text-align: center;">
+            <a href="#" id="ios-direct-link" class="btn-setup" style="display: block; background: #00ff66; color: #000; box-shadow: 0 0 15px #00ff66;">
+                📥 GUARDAR MP3 EN IPHONE
+            </a>
+        </div>
     </main>
 
     <script>
@@ -47,18 +49,15 @@
         
         const modeText = document.getElementById('system-mode');
         const mainBtn = document.getElementById('trigger-btn');
-        const setupBtn = document.getElementById('ios-setup-btn');
         const loadingZone = document.getElementById('loading-zone');
         const statusBar = document.getElementById('status-bar');
         const statusPercentage = document.getElementById('status-percentage');
-
-        // CAMBIO CLAVE: Cambiamos el nombre al que se le instaló en el iPhone
-        const SHORTCUT_NAME = "BART";
+        const iosContainer = document.getElementById('ios-download-container');
+        const iosLink = document.getElementById('ios-direct-link');
 
         if (isIOS) {
             modeText.innerText = "MOBILE IOS SYSTEM";
-            mainBtn.innerText = "DESCARGAR EN IPHONE";
-            setupBtn.style.display = "block";
+            mainBtn.innerText = "PROCESAR EN IPHONE";
         } else {
             modeText.innerText = "PC CORE SYSTEM";
             mainBtn.innerText = "DESCARGAR EN PC";
@@ -80,20 +79,19 @@
                 statusBar.style.width = "0%";
                 statusPercentage.innerText = "0%";
             }
-            
             let progress = 0;
             const interval = setInterval(() => {
                 if (progress >= 90) {
                     clearInterval(interval);
                 } else {
-                    progress += Math.floor(Math.random() * 8) + 2;
+                    progress += Math.floor(Math.random() * 12) + 3;
                     if(progress > 90) progress = 90;
                     if (statusBar && statusPercentage) {
                         statusBar.style.width = `${progress}%`;
                         statusPercentage.innerText = `${progress}%`;
                     }
                 }
-            }, 400);
+            }, 300);
             return interval;
         }
 
@@ -104,10 +102,17 @@
                 statusPercentage.innerText = "100%";
                 setTimeout(() => {
                     if (loadingZone) loadingZone.style.display = "none";
-                }, 2000);
+                }, 1500);
             } else {
                 if (loadingZone) loadingZone.style.display = "none";
             }
+        }
+
+        // Extractor de ID de YouTube
+        function getYouTubeID(url) {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
         }
 
         function handleDownload() {
@@ -118,13 +123,47 @@
             }
 
             if (isIOS) {
-                printLog('> Abriendo motor nativo de iOS...', 'text-success');
-                const shortcutUrl = `shortcuts://run-shortcut?name=${encodeURIComponent(SHORTCUT_NAME)}&input=${encodeURIComponent(urlInput)}`;
-                setTimeout(() => { window.location.href = shortcutUrl; }, 1000);
+                const videoID = getYouTubeID(urlInput);
+                if (!videoID) {
+                    printLog('! Error: El enlace de YouTube no es válido.', 'text-error');
+                    return;
+                }
+
+                mainBtn.disabled = true;
+                iosContainer.style.display = "none";
+                printLog('> Procesando conversión en la nube...', 'text-info');
+                const progressInterval = simulateProgressBar();
+
+                // API pública y estable de conversión MP3 de alta velocidad
+                const apiUrl = `https://api.vexdh.com/v1/download/mp3?id=${videoID}`;
+
+                // Validamos que el servidor responda bien
+                fetch(apiUrl)
+                    .then(res => {
+                        if(res.ok) {
+                            endProgressBar(progressInterval, true);
+                            printLog('✓ ¡Conversión exitosa!', 'text-success');
+                            
+                            // Le pasamos el link directo de descarga al botón verde
+                            iosLink.href = apiUrl;
+                            iosContainer.style.display = "block";
+                            printLog('👇 Tocá el botón verde de abajo para guardar.', 'text-success');
+                        } else {
+                            throw new Error();
+                        }
+                    })
+                    .catch(() => {
+                        endProgressBar(progressInterval, false);
+                        printLog('! Error en el servidor de conversión. Probá de nuevo.', 'text-error');
+                    })
+                    .finally(() => {
+                        mainBtn.disabled = false;
+                    });
+
             } else {
+                // Modo PC clásico con tu server.py
                 mainBtn.disabled = true;
                 printLog('> Conectando con el núcleo local de la PC...', 'text-info');
-                
                 const progressInterval = simulateProgressBar();
 
                 fetch('http://localhost:5000/download', {
@@ -146,7 +185,7 @@
                 })
                 .catch(error => {
                     endProgressBar(progressInterval, false);
-                    printLog('! Error de conexión o proceso. ¿Iniciaste el server.py?', 'text-error');
+                    printLog('! Error de conexión. ¿Iniciaste el server.py?', 'text-error');
                 })
                 .finally(() => {
                     mainBtn.disabled = false;
