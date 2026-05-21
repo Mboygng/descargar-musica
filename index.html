@@ -15,7 +15,7 @@
 
     <main class="downloader-card">
         <header class="brand-header">
-            <h1>MBGTUBE</h1>
+            <h1>MBG STVDIO</h1>
             <p class="subtitle" id="system-mode">DETECTANDO DISPOSITIVO...</p>
         </header>
         
@@ -34,7 +34,7 @@
         </div>
 
         <div class="console-output" id="terminal-screen">
-            <p class="log-line text-muted">Esperando enlace...</p>
+            <p class="log-line text-muted">// Esperando enlace...</p>
         </div>
 
         <a href="https://www.icloud.com/shortcuts/8db2d9e9df444fb9a5726207865c6999" target="_blank" class="btn-setup" id="ios-setup-btn" style="display: none;">
@@ -43,6 +43,7 @@
     </main>
 
     <script>
+        // Detector de entorno: iOS o PC Windows
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
         
         const modeText = document.getElementById('system-mode');
@@ -71,6 +72,7 @@
             screen.scrollTop = screen.scrollHeight;
         }
 
+        // Simulación rítmica de la barra de carga hasta el 90%
         function simulateProgressBar() {
             if (loadingZone) {
                 loadingZone.style.display = "flex";
@@ -94,6 +96,7 @@
             return interval;
         }
 
+        // Cierre de la barra al 100% cuando el backend responde
         function endProgressBar(intervalId, success = true) {
             clearInterval(intervalId);
             if (success && statusBar && statusPercentage) {
@@ -115,10 +118,12 @@
             }
 
             if (isIOS) {
+                // Ejecución nativa del atajo en Apple (Nombre vinculante: MBG Downloader)
                 printLog('> Abriendo motor nativo de iOS...', 'text-success');
                 const shortcutUrl = `shortcuts://run-shortcut?name=MBG%20Downloader&input=${encodeURIComponent(urlInput)}`;
                 setTimeout(() => { window.location.href = shortcutUrl; }, 1000);
             } else {
+                // Petición al backend local en PC (Flask en puerto 5000)
                 mainBtn.disabled = true;
                 printLog('> Conectando con el núcleo local de la PC...', 'text-info');
                 
