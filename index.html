@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MBG STVDIO — DOWNLOADER</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <main class="downloader-card">
+        <header class="brand-header">
+            <h1>MBG STVDIO</h1>
+            <p class="subtitle">AUDIO EXTRACTOR SYSTEM</p>
+        </header>
+        
+        <div class="input-field">
+            <input type="text" id="target-url" placeholder="Pegá el enlace de YouTube o Playlist" autocomplete="off">
+            <span class="line-border"></span>
+        </div>
+
+        <button id="trigger-btn" onclick="processDownload()">DESCARGAR</button>
+
+        <div class="console-output" id="terminal-screen">
+            <p class="log-line text-muted">// Esperando enlace...</p>
+        </div>
+    </main>
+
+    <script>
+        function printLog(text, type = '') {
+            const screen = document.getElementById('terminal-screen');
+            const logLine = document.createElement('p');
+            logLine.classList.add('log-line');
+            if(type) logLine.classList.add(type);
+            logLine.innerText = text;
+            screen.appendChild(logLine);
+            screen.scrollTop = screen.scrollHeight;
+        }
+
+        function processDownload() {
+            const urlInput = document.getElementById('target-url').value.trim();
+            const actionBtn = document.getElementById('trigger-btn');
+
+            if (!urlInput) {
+                printLog('! Error: Introduce un enlace válido.', 'text-error');
+                return;
+            }
+
+            actionBtn.disabled = true;
+            printLog('> Conectando con el núcleo local...', 'text-info');
+
+            fetch('http://localhost:5000/download', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: urlInput })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    printLog(`✓ ${data.message}`, 'text-success');
+                } else {
+                    printLog(`! Fallo: ${data.message}`, 'text-error');
+                }
+            })
+            .catch(error => {
+                printLog('! Error: Servidor local desconectado.', 'text-error');
+            })
+            .finally(() => {
+                actionBtn.disabled = false;
+            });
+        }
+    </script>
+</body>
+</html>
