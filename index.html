@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MBG STVDIO — CLOUD DOWNLOADER</title>
+    <title>MBG STVDIO — DOWNLOADER SYSTEM</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,7 +11,7 @@
     <main class="downloader-card">
         <header class="brand-header">
             <h1>MBG STVDIO</h1>
-            <p class="subtitle">MOBILE IOS SYSTEM</p>
+            <p class="subtitle" id="system-mode">DETECTANDO DISPOSITIVO...</p>
         </header>
         
         <div class="input-field">
@@ -19,19 +19,34 @@
             <span class="line-border"></span>
         </div>
 
-        <button id="trigger-btn" class="btn-main" onclick="sendToShortcut()">DESCARGAR EN IPHONE</button>
+        <button id="trigger-btn" class="btn-main" onclick="handleDownload()">DESCARGAR</button>
 
         <div class="console-output" id="terminal-screen">
-            <p class="log-line text-muted">// Sistema optimizado para iOS.</p>
-            <p class="log-line text-info">> Si es la primera vez, instala el motor de descargas abajo.</p>
+            <p class="log-line text-muted">// Esperando enlace...</p>
         </div>
 
-        <a href="https://www.icloud.com/shortcuts/8db2d9e9df444fb9a5726207865c6999" target="_blank" class="btn-setup">
+        <a href="https://www.icloud.com/shortcuts/8db2d9e9df444fb9a5726207865c6999" target="_blank" class="btn-setup" id="ios-setup-btn" style="display: none;">
             1. INSTALAR MOTOR EN IPHONE
         </a>
     </main>
 
     <script>
+        // Detectamos de entrada si es un dispositivo Apple móvil
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        
+        const modeText = document.getElementById('system-mode');
+        const mainBtn = document.getElementById('trigger-btn');
+        const setupBtn = document.getElementById('ios-setup-btn');
+
+        if (isIOS) {
+            modeText.innerText = "MOBILE IOS SYSTEM";
+            mainBtn.innerText = "DESCARGAR EN IPHONE";
+            setupBtn.style.display = "block"; // Muestra el instalador solo en iPhone
+        } else {
+            modeText.innerText = "PC CORE SYSTEM";
+            mainBtn.innerText = "DESCARGAR EN PC";
+        }
+
         function printLog(text, type = '') {
             const screen = document.getElementById('terminal-screen');
             const logLine = document.createElement('p');
@@ -42,21 +57,50 @@
             screen.scrollTop = screen.scrollHeight;
         }
 
-        function sendToShortcut() {
+        function handleDownload() {
             const urlInput = document.getElementById('target-url').value.trim();
             if (!urlInput) {
                 printLog('! Error: Introduce un enlace válido.', 'text-error');
                 return;
             }
 
-            printLog('> Abriendo motor nativo de iOS...', 'text-success');
-            
-            // Usamos el protocolo nativo de Apple para pasarle el link de tu web al iPhone
-            const shortcutUrl = `shortcuts://run-shortcut?name=MBG%20Downloader&input=${encodeURIComponent(urlInput)}`;
-            
-            setTimeout(() => {
-                window.location.href = shortcutUrl;
-            }, 1000);
+            if (isIOS) {
+                // RUTA IPHONE: Usa el motor de Atajos nativo
+                printLog('> Abriendo motor nativo de iOS...', 'text-success');
+                const shortcutUrl = `shortcuts://run-shortcut?name=MBG%20Downloader&input=${encodeURIComponent(urlInput)}`;
+                setTimeout(() => { window.location.href = shortcutUrl; }, 1000);
+            } else {
+                // RUTA PC: Conecta directo con tu srver.py local
+                mainBtn.disabled = true;
+                printLog('> Conectando con el núcleo local de la PC...', 'text-info');
+
+                fetch('http://localhost:5000/download', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: urlInput })
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('El servidor local tiró un error.');
+                    return response.blob(); // Recibe el ZIP físico creado por tu python
+                })
+                .then(blob => {
+                    // Descarga automática del paquete ZIP en tu carpeta de Descargas de la PC
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = "MBG_MUSIC_PACK.zip";
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    printLog('✓ ¡Pack descargado con éxito en tu PC!', 'text-success');
+                })
+                .catch(error => {
+                    printLog('! Error: Servidor local desconectado. ¿Tenés el srver.py abierto?', 'text-error');
+                })
+                .finally(() => {
+                    mainBtn.disabled = false;
+                });
+            }
         }
     </script>
 </body>
