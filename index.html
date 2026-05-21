@@ -37,13 +37,12 @@
             <p class="log-line text-muted">// Esperando enlace...</p>
         </div>
 
-        <a href="https://www.icloud.com/shortcuts/56bc859db7cb40d5926ec03b9b4f23b7" target="_blank" class="btn-setup" id="ios-setup-btn" style="display: none;">
+        <a href="https://routinehub.co/shortcut/4069/" target="_blank" class="btn-setup" id="ios-setup-btn" style="display: none;">
             1. INSTALAR MOTOR EN IPHONE
         </a>
     </main>
 
     <script>
-        // Detector de entorno: iOS o PC Windows
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
         
         const modeText = document.getElementById('system-mode');
@@ -53,8 +52,7 @@
         const statusBar = document.getElementById('status-bar');
         const statusPercentage = document.getElementById('status-percentage');
 
-        // Ajustamos las variables del Atajo según el nuevo motor público instalado
-        // El atajo se descarga oficialmente con el nombre "RDownload"
+        // Nombre del atajo estándar de RoutineHub para descargas de medios
         const SHORTCUT_NAME = "RDownload";
 
         if (isIOS) {
@@ -121,7 +119,6 @@
 
             if (isIOS) {
                 printLog('> Abriendo motor nativo de iOS...', 'text-success');
-                // Llama al nuevo atajo usando su nombre clave
                 const shortcutUrl = `shortcuts://run-shortcut?name=${encodeURIComponent(SHORTCUT_NAME)}&input=${encodeURIComponent(urlInput)}`;
                 setTimeout(() => { window.location.href = shortcutUrl; }, 1000);
             } else {
