@@ -8,7 +8,7 @@
 }
 
 body {
-    background-color: #050505;
+    background-color: #030307;
     min-height: 100vh;
     display: flex;
     justify-content: center;
@@ -17,7 +17,7 @@ body {
     position: relative;
 }
 
-/* --- EFECTO DE FONDO EN MOVIMIENTO (FILTRO VIDRIO) --- */
+/* --- FONDO ULTRA FLUIDO CON COLORES EN MOVIMIENTO --- */
 .bg-blur-container {
     position: absolute;
     width: 100%;
@@ -28,77 +28,81 @@ body {
     overflow: hidden;
 }
 
+/* Burbujas gigantes con colores vivos y blur masivo */
 .blob {
     position: absolute;
-    width: 450px;
-    height: 450px;
-    background: radial-gradient(circle, rgba(20,20,20,0.8) 0%, rgba(0,0,0,0) 70%);
     border-radius: 50%;
-    filter: blur(60px);
-    opacity: 0.6;
+    filter: blur(140px);
+    opacity: 0.55;
+    mix-blend-mode: screen;
 }
 
-/* El neón goth oculto que se mueve de fondo */
 .blob-1 {
-    background: radial-gradient(circle, rgba(50,50,50,0.4) 0%, rgba(15,15,25,0) 70%);
-    top: -10%;
-    left: 10%;
-    animation: moveBlob1 15s infinite alternate ease-in-out;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, #7000ff 0%, #00d4ff 100%);
+    top: -20%;
+    left: -10%;
+    animation: moveBlob1 20s infinite alternate ease-in-out;
 }
 
 .blob-2 {
-    background: radial-gradient(circle, rgba(30,30,40,0.5) 0%, rgba(0,0,0,0) 70%);
-    bottom: -10%;
-    right: 10%;
-    animation: moveBlob2 12s infinite alternate ease-in-out;
+    width: 700px;
+    height: 700px;
+    background: radial-gradient(circle, #ff007f 0%, #7000ff 100%);
+    bottom: -20%;
+    right: -10%;
+    animation: moveBlob2 18s infinite alternate ease-in-out;
 }
 
 @keyframes moveBlob1 {
-    0% { transform: translate(0, 0) scale(1); }
-    100% { transform: translate(100px, 50px) scale(1.2); }
+    0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+    50% { transform: translate(150px, 100px) scale(1.3) rotate(90deg); }
+    100% { transform: translate(-50px, 200px) scale(0.9) rotate(180deg); }
 }
 
 @keyframes moveBlob2 {
-    0% { transform: translate(0, 0) scale(1.1); }
-    100% { transform: translate(-120px, -80px) scale(0.9); }
+    0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+    50% { transform: translate(-150px, -150px) scale(0.8) rotate(-90deg); }
+    100% { transform: translate(100px, -50px) scale(1.2) rotate(-180deg); }
 }
 
-/* --- TARJETA CON GLASSMORPHISM (ESTILO IPHONE) --- */
+/* --- EFECTO VIDRIO ESMERILADO (GLASSMORPHISM) --- */
 .downloader-card {
     position: relative;
     z-index: 10;
     width: 100%;
     max-width: 420px;
-    padding: 35px 30px;
-    background: rgba(13, 13, 13, 0.65); /* Transparencia */
-    backdrop-filter: blur(20px); /* Desenfoque de vidrio de Apple */
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.04); /* Borde sutil del vidrio */
-    border-radius: 6px;
-    box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+    padding: 40px 35px;
+    background: rgba(10, 10, 12, 0.45); /* Súper translúcido para ver los colores pasar */
+    backdrop-filter: blur(30px); /* El desenfoque estilo iPhone */
+    -webkit-backdrop-filter: blur(30px);
+    border: 1px solid rgba(255, 255, 255, 0.07); /* Reflejo del borde del vidrio */
+    border-radius: 8px;
+    box-shadow: 0 40px 80px rgba(0, 0, 0, 0.7);
 }
 
 .brand-header {
     text-align: center;
-    margin-bottom: 30px;
+    margin-bottom: 35px;
 }
 
 .brand-header h1 {
     color: #ffffff;
     font-size: 1.4rem;
     font-weight: 700;
-    letter-spacing: 5px;
-    margin-bottom: 5px;
+    letter-spacing: 6px;
+    margin-bottom: 6px;
 }
 
 .subtitle {
-    color: #555;
+    color: rgba(255, 255, 255, 0.3);
     font-size: 0.65rem;
-    letter-spacing: 2px;
+    letter-spacing: 3px;
     font-weight: 700;
 }
 
-/* --- CAMPO DE ENTRADA CYBER --- */
+/* --- INPUT CYBER GOTH --- */
 .input-field {
     position: relative;
     margin-bottom: 25px;
@@ -106,67 +110,67 @@ body {
 
 .input-field input {
     width: 100%;
-    background: rgba(20, 20, 20, 0.5);
+    background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.05);
-    padding: 14px 15px;
+    padding: 16px 18px;
     color: #fff;
     font-size: 0.85rem;
     outline: none;
-    border-radius: 3px;
+    border-radius: 4px;
     transition: all 0.3s ease;
 }
 
 .input-field input::placeholder {
-    color: #444;
+    color: rgba(255, 255, 255, 0.15);
 }
 
 .input-field input:focus {
-    border-color: rgba(255, 255, 255, 0.2);
-    background: rgba(255, 255, 255, 0.02);
-    box-shadow: 0 0 15px rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 25px rgba(112, 0, 255, 0.1);
 }
 
-/* --- BOTÓN PRINCIPAL SOLID BLANC --- */
+/* --- BOTÓN PRINCIPAL SOLIDO BLANCO --- */
 .btn-main {
     width: 100%;
     background: #ffffff;
     color: #000000;
     border: none;
-    padding: 15px;
+    padding: 16px;
     font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 2px;
     text-transform: uppercase;
     cursor: pointer;
-    border-radius: 3px;
+    border-radius: 4px;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .btn-main:hover:not(:disabled) {
-    background: #e5e5e5;
+    background: #f0f0f0;
     transform: translateY(-1px);
-    box-shadow: 0 10px 20px rgba(255, 255, 255, 0.05);
+    box-shadow: 0 15px 30px rgba(255, 255, 255, 0.1);
 }
 
 .btn-main:disabled {
-    background: #222;
-    color: #555;
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.2);
     cursor: not-allowed;
 }
 
-/* --- BARRA DE PROGRESO DE CARGA --- */
+/* --- BARRA DE PROGRESO DE NEÓN --- */
 .progress-container {
-    margin-top: 20px;
+    margin-top: 25px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 15px;
 }
 
 .progress-bar-wrapper {
     flex: 1;
-    height: 3px;
+    height: 4px;
     background: rgba(255, 255, 255, 0.05);
-    border-radius: 2px;
+    border-radius: 4px;
     overflow: hidden;
 }
 
@@ -174,59 +178,61 @@ body {
     height: 100%;
     width: 0%;
     background: #ffffff;
-    border-radius: 2px;
+    box-shadow: 0 0 10px #ffffff; /* Destello sutil de carga */
+    border-radius: 4px;
     transition: width 0.4s ease-out;
 }
 
 .progress-percentage {
-    color: #888;
+    color: rgba(255, 255, 255, 0.4);
     font-size: 0.7rem;
     font-weight: 700;
-    min-width: 30px;
+    min-width: 35px;
     text-align: right;
 }
 
-/* --- CONSOLA DE REGISTROS --- */
+/* --- TERMINAL DE ESTADOS --- */
 .console-output {
-    margin-top: 20px;
+    margin-top: 25px;
     background: rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.03);
     padding: 15px;
-    border-radius: 3px;
+    border-radius: 4px;
     max-height: 110px;
     overflow-y: auto;
 }
 
 .log-line {
     font-size: 0.7rem;
-    line-height: 1.5;
+    line-height: 1.6;
     letter-spacing: 0.5px;
     margin-bottom: 4px;
 }
 
-.text-muted { color: #444; }
-.text-info { color: #888; }
+.text-muted { color: rgba(255, 255, 255, 0.2); }
+.text-info { color: rgba(255, 255, 255, 0.5); }
 .text-success { color: #ffffff; font-weight: 700; }
-.text-error { color: #ff3b30; }
+.text-error { color: #ff453a; }
 
-/* --- INSTALADOR IPHONE --- */
+/* --- INSTALADOR ATALHO IPHONE --- */
 .btn-setup {
     display: block;
     text-align: center;
     text-decoration: none;
-    margin-top: 20px;
+    margin-top: 25px;
     background: transparent;
-    color: #444;
+    color: rgba(255, 255, 255, 0.25);
     border: 1px dashed rgba(255, 255, 255, 0.1);
-    padding: 12px;
+    padding: 14px;
     font-size: 0.65rem;
     font-weight: 700;
     letter-spacing: 1px;
-    border-radius: 3px;
+    border-radius: 4px;
     transition: all 0.3s ease;
 }
 
 .btn-setup:hover {
     color: #fff;
     border-color: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.02);
 }
