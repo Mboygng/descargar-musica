@@ -20,11 +20,9 @@ def download():
     if not os.path.exists(executable):
         return jsonify({'status': 'error', 'message': 'Falta el archivo yt-dlp.exe al lado de este script.'}), 500
 
-    # Usamos os.path.abspath para que Windows sepa la ruta exacta real en el disco
     base_dir = os.path.dirname(os.path.abspath(__file__))
     temp_dir = os.path.join(base_dir, "temp_download")
     
-    # Limpieza previa por si quedó algo trabado antes
     if os.path.exists(temp_dir):
         shutil.rmtree(temp_dir)
         
@@ -53,28 +51,33 @@ def download():
         res_title = subprocess.run(cmd_title, capture_output=True, text=True)
         playlist_name = res_title.stdout.strip()
         
-        if not playlist_name or playlist_name == "NA" or playlist_name == "None":
+        # --- LIMPIEZA BLINDADA DE NOMBRE ---
+        # 1. Eliminamos saltos de línea (\n y \r) que rompen Windows
+        playlist_name = playlist_name.replace('\n', '_').replace('\r', '_')
+        
+        # 2. Si quedó vacío o por defecto, le clavamos un nombre genérico limpio
+        if not playlist_name or playlist_name in ["NA", "None", ""]:
             playlist_name = "MBG_PACK"
             
-        for char in ['/', '\\', '?', '%', '*', ':', '|', '"', '<', '>']:
+        # 3. Limpiamos caracteres prohibidos de carpetas en Windows
+        for char in ['/', '\\', '?', '%', '*', ':', '|', '"', '<', '>', '\n', '\r']:
             playlist_name = playlist_name.replace(char, "_")
+            
+        # Nos aseguramos de que no queden espacios dobles raros
+        playlist_name = " ".join(playlist_name.split())
+        # -----------------------------------
 
-        # Ruta absoluta donde se va a crear el archivo .zip físico en tu PC antes de mandarlo
         zip_filepath = os.path.join(base_dir, f"{playlist_name}.zip")
         print(f"> Creando archivo comprimido definitivo en: {zip_filepath}")
         
-        # Armamos el ZIP leyendo los archivos descargados
         with zipfile.ZipFile(zip_filepath, 'w', zipfile.ZIP_DEFLATED) as zipf:
             for root, dirs, files in os.walk(temp_dir):
                 for file in files:
                     file_src = file.replace("NA - ", "01 - ") if file.startswith("NA - ") else file
-                    # Guardamos el archivo físico adentro de la estructura del ZIP
                     zipf.write(os.path.join(root, file), os.path.join(playlist_name, file_src))
                     
-        # Ahora que el ZIP ya está cerrado y creado, borramos los temas sueltos de la carpeta temporal
         shutil.rmtree(temp_dir)
         
-        # Mandamos el archivo ZIP real directo a la barra de descargas de tu navegador
         return send_file(zip_filepath, as_attachment=True)
         
     except Exception as e:
