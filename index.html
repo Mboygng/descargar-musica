@@ -47,9 +47,10 @@
             }
 
             actionBtn.disabled = true;
-            printLog('> Conectando con el núcleo local...', 'text-info');
+            printLog('> Conectando con el núcleo local a través de pasarela segura...', 'text-info');
 
-            fetch('http://localhost:5000/download', {
+            // Modificado con el proxy seguro para conectar Vercel (HTTPS) con tu PC (HTTP)
+            fetch('https://local-cors-proxy.onrender.com/http://localhost:5000/download', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ url: urlInput })
@@ -63,7 +64,7 @@
                 }
             })
             .catch(error => {
-                printLog('! Error: Servidor local desconectado.', 'text-error');
+                printLog('! Error: Servidor local desconectado. ¿Prendiste el srver.py?', 'text-error');
             })
             .finally(() => {
                 actionBtn.disabled = false;
