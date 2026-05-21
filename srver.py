@@ -21,15 +21,22 @@ def download():
     base_dir = os.path.dirname(os.path.abspath(__file__))
     
     try:
-        print("> Obteniendo el nombre de la playlist (Filtro único activo)...")
-        # Agregamos "--playlist-items 1" para que traiga el nombre UNA sola vez
-        cmd_title = [executable, "--playlist-items", "1", "--get-filename", "-o", "%(playlist)s", url]
+        print("> Obteniendo el nombre de la playlist...")
+        cmd_title = [executable, "--get-filename", "-o", "%(playlist)s", url]
         res_title = subprocess.run(cmd_title, capture_output=True, text=True)
-        playlist_name = res_title.stdout.strip()
         
-        # Limpieza de saltos de línea
-        playlist_name = playlist_name.replace('\n', '_').replace('\r', '_')
+        # --- EL FILTRO DEFINITIVO EN PYTHON ---
+        raw_output = res_title.stdout.strip()
         
+        # Si la salida tiene saltos de línea, nos quedamos ESTRICTAMENTE con la primera línea
+        if '\n' in raw_output:
+            playlist_name = raw_output.split('\n')[0].strip()
+        elif '\r' in raw_output:
+            playlist_name = raw_output.split('\r')[0].strip()
+        else:
+            playlist_name = raw_output
+
+        # Si por alguna razón vino vacío o roto, nombre genérico limpio
         if not playlist_name or playlist_name in ["NA", "None", ""]:
             playlist_name = "MBG_PACK"
             
@@ -37,14 +44,14 @@ def download():
         for char in ['/', '\\', '?', '%', '*', ':', '|', '"', '<', '>', '\n', '\r']:
             playlist_name = playlist_name.replace(char, "_")
             
-        # Nos quedamos con el nombre limpio final
+        # Borramos espacios dobles raros
         playlist_name = " ".join(playlist_name.split())
+        
+        # Limpieza extra por si quedó algún guión bajo huérfano al final
+        playlist_name = playlist_name.strip('_')
+        # ----------------------------------------
 
-        # Si por alguna razón quedó un guión bajo colgado al final, lo volamos
-        if playlist_name.endswith('_'):
-            playlist_name = playlist_name.rstrip('_')
-
-        # Creamos la carpeta con el nombre único real
+        # Creamos la carpeta con el nombre único real de una sola línea
         target_dir = os.path.join(base_dir, playlist_name)
         os.makedirs(target_dir, exist_ok=True)
         
