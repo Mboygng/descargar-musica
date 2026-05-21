@@ -124,3 +124,23 @@ body {
 .text-info { color: #888888; }
 .text-success { color: #ffffff; font-weight: 600; }
 .text-error { color: #ff4444; }
+.btn-setup {
+    display: block;
+    text-align: center;
+    text-decoration: none;
+    margin-top: 20px;
+    background: transparent;
+    color: #666;
+    border: 1px dashed #333;
+    padding: 10px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+}
+
+.btn-setup:hover {
+    color: #fff;
+    border-color: #fff;
+}
