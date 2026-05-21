@@ -1,8 +1,6 @@
 import subprocess
 import os
-import shutil
-import zipfile
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -21,68 +19,52 @@ def download():
         return jsonify({'status': 'error', 'message': 'Falta el archivo yt-dlp.exe al lado de este script.'}), 500
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    temp_dir = os.path.join(base_dir, "temp_download")
-    
-    if os.path.exists(temp_dir):
-        shutil.rmtree(temp_dir)
-        
-    os.makedirs(temp_dir, exist_ok=True)
-
-    output_template = os.path.join(temp_dir, "%(playlist_index)02d - %(title)s.%(ext)s")
-    
-    comando = [
-        executable,
-        "--extract-audio",
-        "--audio-format", "mp3",
-        "--audio-quality", "96k",
-        "--embed-thumbnail",
-        "--ppa", "ffmpeg:-ac 1 -ar 22050",
-        "-o", output_template,
-        "--no-warnings",
-        url
-    ]
     
     try:
-        print("> Descargando contenido en carpeta temporal fija...")
-        subprocess.run(comando, capture_output=True, text=True, check=True)
-        
-        # Obtener el nombre de la playlist original
+        print("> Obteniendo el nombre de la playlist...")
+        # Le pedimos a yt-dlp el nombre real de la playlist
         cmd_title = [executable, "--get-filename", "-o", "%(playlist)s", url]
         res_title = subprocess.run(cmd_title, capture_output=True, text=True)
         playlist_name = res_title.stdout.strip()
         
-        # --- LIMPIEZA BLINDADA DE NOMBRE ---
-        # 1. Eliminamos saltos de línea (\n y \r) que rompen Windows
+        # Limpieza profunda del nombre para Windows (sacamos saltos de línea y caracteres raros)
         playlist_name = playlist_name.replace('\n', '_').replace('\r', '_')
-        
-        # 2. Si quedó vacío o por defecto, le clavamos un nombre genérico limpio
         if not playlist_name or playlist_name in ["NA", "None", ""]:
             playlist_name = "MBG_PACK"
             
-        # 3. Limpiamos caracteres prohibidos de carpetas en Windows
         for char in ['/', '\\', '?', '%', '*', ':', '|', '"', '<', '>', '\n', '\r']:
             playlist_name = playlist_name.replace(char, "_")
             
-        # Nos aseguramos de que no queden espacios dobles raros
         playlist_name = " ".join(playlist_name.split())
-        # -----------------------------------
 
-        zip_filepath = os.path.join(base_dir, f"{playlist_name}.zip")
-        print(f"> Creando archivo comprimido definitivo en: {zip_filepath}")
+        # Creamos la carpeta definitiva con el nombre de la playlist al lado del server.py
+        target_dir = os.path.join(base_dir, playlist_name)
+        os.makedirs(target_dir, exist_ok=True)
         
-        with zipfile.ZipFile(zip_filepath, 'w', zipfile.ZIP_DEFLATED) as zipf:
-            for root, dirs, files in os.walk(temp_dir):
-                for file in files:
-                    file_src = file.replace("NA - ", "01 - ") if file.startswith("NA - ") else file
-                    zipf.write(os.path.join(root, file), os.path.join(playlist_name, file_src))
-                    
-        shutil.rmtree(temp_dir)
+        print(f"> Descargando pistas directo en la carpeta: {playlist_name}")
         
-        return send_file(zip_filepath, as_attachment=True)
+        # Guardamos los archivos numerados directamente en su carpeta final
+        output_template = os.path.join(target_dir, "%(playlist_index)02d - %(title)s.%(ext)s")
+        
+        comando = [
+            executable,
+            "--extract-audio",
+            "--audio-format", "mp3",
+            "--audio-quality", "96k",
+            "--embed-thumbnail",
+            "--ppa", "ffmpeg:-ac 1 -ar 22050",
+            "-o", output_template,
+            "--no-warnings",
+            url
+        ]
+        
+        # Corre la descarga en tiempo real
+        subprocess.run(comando, check=True)
+        
+        print(f"✓ ¡Completado! Carpeta lista en: {target_dir}")
+        return jsonify({'status': 'success', 'message': f'Carpeta {playlist_name} creada con éxito.'})
         
     except Exception as e:
-        if os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir)
         print(f"! Error interno: {str(e)}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
