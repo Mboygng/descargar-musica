@@ -37,7 +37,7 @@
             <p class="log-line text-muted">// Esperando enlace...</p>
         </div>
 
-        <a href="https://www.icloud.com/shortcuts/8db2d9e9df444fb9a5726207865c6999" target="_blank" class="btn-setup" id="ios-setup-btn" style="display: none;">
+        <a href="https://www.icloud.com/shortcuts/56bc859db7cb40d5926ec03b9b4f23b7" target="_blank" class="btn-setup" id="ios-setup-btn" style="display: none;">
             1. INSTALAR MOTOR EN IPHONE
         </a>
     </main>
@@ -52,6 +52,10 @@
         const loadingZone = document.getElementById('loading-zone');
         const statusBar = document.getElementById('status-bar');
         const statusPercentage = document.getElementById('status-percentage');
+
+        // Ajustamos las variables del Atajo según el nuevo motor público instalado
+        // El atajo se descarga oficialmente con el nombre "RDownload"
+        const SHORTCUT_NAME = "RDownload";
 
         if (isIOS) {
             modeText.innerText = "MOBILE IOS SYSTEM";
@@ -72,7 +76,6 @@
             screen.scrollTop = screen.scrollHeight;
         }
 
-        // Simulación rítmica de la barra de carga hasta el 90%
         function simulateProgressBar() {
             if (loadingZone) {
                 loadingZone.style.display = "flex";
@@ -96,7 +99,6 @@
             return interval;
         }
 
-        // Cierre de la barra al 100% cuando el backend responde
         function endProgressBar(intervalId, success = true) {
             clearInterval(intervalId);
             if (success && statusBar && statusPercentage) {
@@ -118,12 +120,11 @@
             }
 
             if (isIOS) {
-                // Ejecución nativa del atajo en Apple (Nombre vinculante: MBG Downloader)
                 printLog('> Abriendo motor nativo de iOS...', 'text-success');
-                const shortcutUrl = `shortcuts://run-shortcut?name=MBG%20Downloader&input=${encodeURIComponent(urlInput)}`;
+                // Llama al nuevo atajo usando su nombre clave
+                const shortcutUrl = `shortcuts://run-shortcut?name=${encodeURIComponent(SHORTCUT_NAME)}&input=${encodeURIComponent(urlInput)}`;
                 setTimeout(() => { window.location.href = shortcutUrl; }, 1000);
             } else {
-                // Petición al backend local en PC (Flask en puerto 5000)
                 mainBtn.disabled = true;
                 printLog('> Conectando con el núcleo local de la PC...', 'text-info');
                 
