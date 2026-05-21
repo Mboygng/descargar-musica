@@ -12,7 +12,7 @@
         <div class="blob blob-1"></div>
         <div class="blob blob-2"></div>
     </div>
-    
+
     <main class="downloader-card">
         <header class="brand-header">
             <h1>MBG STVDIO</h1>
@@ -26,6 +26,13 @@
 
         <button id="trigger-btn" class="btn-main" onclick="handleDownload()">DESCARGAR</button>
 
+        <div class="progress-container" id="loading-zone" style="display: none;">
+            <div class="progress-bar-wrapper">
+                <div class="progress-bar-fill" id="status-bar"></div>
+            </div>
+            <p class="progress-percentage" id="status-percentage">0%</p>
+        </div>
+
         <div class="console-output" id="terminal-screen">
             <p class="log-line text-muted">// Esperando enlace...</p>
         </div>
@@ -36,7 +43,6 @@
     </main>
 
     <script>
-        // Detectamos si es un dispositivo Apple móvil o PC
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
         
         const modeText = document.getElementById('system-mode');
@@ -46,7 +52,6 @@
         const statusBar = document.getElementById('status-bar');
         const statusPercentage = document.getElementById('status-percentage');
 
-        // Ajustamos la interfaz según el dispositivo
         if (isIOS) {
             modeText.innerText = "MOBILE IOS SYSTEM";
             mainBtn.innerText = "DESCARGAR EN IPHONE";
@@ -56,7 +61,6 @@
             mainBtn.innerText = "DESCARGAR EN PC";
         }
 
-        // Función para imprimir estados en la consola interna de la pantalla
         function printLog(text, type = '') {
             const screen = document.getElementById('terminal-screen');
             const logLine = document.createElement('p');
@@ -67,11 +71,12 @@
             screen.scrollTop = screen.scrollHeight;
         }
 
-        // Arranca la animación de la barra de carga (sube rítmica hasta 90%)
         function simulateProgressBar() {
-            loadingZone.style.display = "flex";
-            statusBar.style.width = "0%";
-            statusPercentage.innerText = "0%";
+            if (loadingZone) {
+                loadingZone.style.display = "flex";
+                statusBar.style.width = "0%";
+                statusPercentage.innerText = "0%";
+            }
             
             let progress = 0;
             const interval = setInterval(() => {
@@ -80,28 +85,28 @@
                 } else {
                     progress += Math.floor(Math.random() * 8) + 2;
                     if(progress > 90) progress = 90;
-                    statusBar.style.width = `${progress}%`;
-                    statusPercentage.innerText = `${progress}%`;
+                    if (statusBar && statusPercentage) {
+                        statusBar.style.width = `${progress}%`;
+                        statusPercentage.innerText = `${progress}%`;
+                    }
                 }
             }, 400);
             return interval;
         }
 
-        // Finaliza la barra al 100% si todo salió bien o la oculta si falló
         function endProgressBar(intervalId, success = true) {
             clearInterval(intervalId);
-            if (success) {
+            if (success && statusBar && statusPercentage) {
                 statusBar.style.width = "100%";
                 statusPercentage.innerText = "100%";
                 setTimeout(() => {
-                    loadingZone.style.display = "none";
+                    if (loadingZone) loadingZone.style.display = "none";
                 }, 2000);
             } else {
-                loadingZone.style.display = "none";
+                if (loadingZone) loadingZone.style.display = "none";
             }
         }
 
-        // Manejador principal de la descarga
         function handleDownload() {
             const urlInput = document.getElementById('target-url').value.trim();
             if (!urlInput) {
@@ -110,12 +115,10 @@
             }
 
             if (isIOS) {
-                // RUTA IPHONE: Atajo nativo de Apple
                 printLog('> Abriendo motor nativo de iOS...', 'text-success');
                 const shortcutUrl = `shortcuts://run-shortcut?name=MBG%20Downloader&input=${encodeURIComponent(urlInput)}`;
                 setTimeout(() => { window.location.href = shortcutUrl; }, 1000);
             } else {
-                // RUTA PC: Conexión al srver.py de tu computadora
                 mainBtn.disabled = true;
                 printLog('> Conectando con el núcleo local de la PC...', 'text-info');
                 
