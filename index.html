@@ -5,14 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MBG STVDIO — CLOUD DOWNLOADER</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
 
     <main class="downloader-card">
         <header class="brand-header">
             <h1>MBG STVDIO</h1>
-            <p class="subtitle">MOBILE CLOUD SYSTEM</p>
+            <p class="subtitle">MOBILE IOS SYSTEM</p>
         </header>
         
         <div class="input-field">
@@ -20,11 +19,16 @@
             <span class="line-border"></span>
         </div>
 
-        <button id="trigger-btn" onclick="startCloudDownload()">DESCARGAR EN IPHONE</button>
+        <button id="trigger-btn" class="btn-main" onclick="sendToShortcut()">DESCARGAR EN IPHONE</button>
 
         <div class="console-output" id="terminal-screen">
-            <p class="log-line text-muted">// Sistema listo en la nube...</p>
+            <p class="log-line text-muted">// Sistema optimizado para iOS.</p>
+            <p class="log-line text-info">> Si es la primera vez, instala el motor de descargas abajo.</p>
         </div>
+
+        <a href="https://www.icloud.com/shortcuts/8db2d9e9df444fb9a5726207865c6999" target="_blank" class="btn-setup">
+            1. INSTALAR MOTOR EN IPHONE
+        </a>
     </main>
 
     <script>
@@ -38,102 +42,21 @@
             screen.scrollTop = screen.scrollHeight;
         }
 
-        async function startCloudDownload() {
+        function sendToShortcut() {
             const urlInput = document.getElementById('target-url').value.trim();
-            const actionBtn = document.getElementById('trigger-btn');
-
             if (!urlInput) {
                 printLog('! Error: Introduce un enlace válido.', 'text-error');
                 return;
             }
 
-            actionBtn.disabled = true;
-            printLog('> Procesando enlace a través de pasarela segura...', 'text-info');
-
-            try {
-                // Usamos la API de AllOrigins como puente para evitar el "Failed to fetch" de CORS
-                const targetApi = 'https://api.cobalt.tools/api/json';
-                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetApi)}`;
-
-                // Configuramos los parámetros de descarga de música
-                const cobaltPayload = {
-                    url: urlInput,
-                    downloadMode: 'audio',
-                    audioFormat: 'mp3',
-                    audioBitrate: '128'
-                };
-
-                // Enviamos la petición oculta a través del proxy
-                const response = await fetch('https://api.cobalt.tools/api/json', {
-                    method: 'POST',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(cobaltPayload)
-                }).catch(() => {
-                    // Si el fetch directo falla por CORS, usamos el plan B (Proxy inverso alternativo)
-                    return fetch(`https://corsproxy.io/?${encodeURIComponent(targetApi)}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(cobaltPayload)
-                    });
-                });
-
-                const data = await response.json();
-
-                if (data.status === 'error') {
-                    throw new Error(data.text || 'La nube rechazó el enlace.');
-                }
-
-                const zip = new JSZip();
-                const folder = zip.folder("MBG_PLAYLIST");
-
-                // Caso A: Es una Playlist (vienen varios links en un array de "picker")
-                if (data.status === 'picker' || Array.isArray(data.picker)) {
-                    printLog(`> Playlist detectada (${data.picker.length} temas). Descargando...`, 'text-info');
-                    
-                    for (let i = 0; i < data.picker.length; i++) {
-                        const item = data.picker[i];
-                        const indexStr = String(i + 1).padStart(2, '0'); // Genera 01, 02, 03...
-                        printLog(`[${indexStr}] Descargando: ${item.text || 'Track'}`, 'text-info');
-                        
-                        // Descargamos el archivo de audio usando un proxy para que el iPhone no lo bloquee
-                        const audioUrl = `https://corsproxy.io/?${encodeURIComponent(item.url)}`;
-                        const fileAudio = await fetch(audioUrl).then(r => r.blob());
-                        folder.file(`${indexStr} - ${item.text || 'Track'}.mp3`, fileAudio);
-                    }
-                } 
-                // Caso B: Es un solo video suelto
-                else if (data.status === 'redirect' && data.url) {
-                    printLog('> Canción individual detectada...', 'text-info');
-                    const audioUrl = `https://corsproxy.io/?${encodeURIComponent(data.url)}`;
-                    const fileAudio = await fetch(audioUrl).then(r => r.blob());
-                    folder.file("01 - Audio Track.mp3", fileAudio);
-                } else {
-                    throw new Error('No se encontró contenido procesable.');
-                }
-
-                // Generamos el archivo comprimido final en la memoria del iPhone
-                printLog('> Empaquetando todo en archivo .zip...', 'text-info');
-                const content = await zip.generateAsync({ type: "blob" });
-                
-                // Descarga automática en la app Archivos de iOS
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(content);
-                link.download = `MBG_PACK_${Date.now()}.zip`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-
-                printLog('✓ ¡Completado! El .zip ya está en tus Descargas.', 'text-success');
-
-            } catch (error) {
-                printLog(`! Fallo: Servidor ocupado. Reintentá en unos segundos.`, 'text-error');
-                console.error(error);
-            } finally {
-                actionBtn.disabled = false;
-            }
+            printLog('> Abriendo motor nativo de iOS...', 'text-success');
+            
+            # Usamos el protocolo nativo de Apple para pasarle el link de tu web al iPhone
+            const shortcutUrl = `shortcuts://run-shortcut?name=MBG%20Downloader&input=${encodeURIComponent(urlInput)}`;
+            
+            setTimeout(() => {
+                window.location.href = shortcutUrl;
+            }, 1000);
         }
     </script>
 </body>
