@@ -31,22 +31,27 @@
     </main>
 
     <script>
-        // Detectamos de entrada si es un dispositivo Apple móvil
+        // Detectamos si es un dispositivo Apple móvil o PC
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
         
         const modeText = document.getElementById('system-mode');
         const mainBtn = document.getElementById('trigger-btn');
         const setupBtn = document.getElementById('ios-setup-btn');
+        const loadingZone = document.getElementById('loading-zone');
+        const statusBar = document.getElementById('status-bar');
+        const statusPercentage = document.getElementById('status-percentage');
 
+        // Ajustamos la interfaz según el dispositivo
         if (isIOS) {
             modeText.innerText = "MOBILE IOS SYSTEM";
             mainBtn.innerText = "DESCARGAR EN IPHONE";
-            setupBtn.style.display = "block"; // Muestra el instalador solo en iPhone
+            setupBtn.style.display = "block";
         } else {
             modeText.innerText = "PC CORE SYSTEM";
             mainBtn.innerText = "DESCARGAR EN PC";
         }
 
+        // Función para imprimir estados en la consola interna de la pantalla
         function printLog(text, type = '') {
             const screen = document.getElementById('terminal-screen');
             const logLine = document.createElement('p');
@@ -57,6 +62,41 @@
             screen.scrollTop = screen.scrollHeight;
         }
 
+        // Arranca la animación de la barra de carga (sube rítmica hasta 90%)
+        function simulateProgressBar() {
+            loadingZone.style.display = "flex";
+            statusBar.style.width = "0%";
+            statusPercentage.innerText = "0%";
+            
+            let progress = 0;
+            const interval = setInterval(() => {
+                if (progress >= 90) {
+                    clearInterval(interval);
+                } else {
+                    progress += Math.floor(Math.random() * 8) + 2;
+                    if(progress > 90) progress = 90;
+                    statusBar.style.width = `${progress}%`;
+                    statusPercentage.innerText = `${progress}%`;
+                }
+            }, 400);
+            return interval;
+        }
+
+        // Finaliza la barra al 100% si todo salió bien o la oculta si falló
+        function endProgressBar(intervalId, success = true) {
+            clearInterval(intervalId);
+            if (success) {
+                statusBar.style.width = "100%";
+                statusPercentage.innerText = "100%";
+                setTimeout(() => {
+                    loadingZone.style.display = "none";
+                }, 2000);
+            } else {
+                loadingZone.style.display = "none";
+            }
+        }
+
+        // Manejador principal de la descarga
         function handleDownload() {
             const urlInput = document.getElementById('target-url').value.trim();
             if (!urlInput) {
@@ -65,14 +105,16 @@
             }
 
             if (isIOS) {
-                // RUTA IPHONE: Usa el motor de Atajos nativo
+                // RUTA IPHONE: Atajo nativo de Apple
                 printLog('> Abriendo motor nativo de iOS...', 'text-success');
                 const shortcutUrl = `shortcuts://run-shortcut?name=MBG%20Downloader&input=${encodeURIComponent(urlInput)}`;
                 setTimeout(() => { window.location.href = shortcutUrl; }, 1000);
             } else {
-                // RUTA PC: Conecta directo con tu srver.py local
+                // RUTA PC: Conexión al srver.py de tu computadora
                 mainBtn.disabled = true;
                 printLog('> Conectando con el núcleo local de la PC...', 'text-info');
+                
+                const progressInterval = simulateProgressBar();
 
                 fetch('http://localhost:5000/download', {
                     method: 'POST',
@@ -80,22 +122,20 @@
                     body: JSON.stringify({ url: urlInput })
                 })
                 .then(response => {
-                    if (!response.ok) throw new Error('El servidor local tiró un error.');
-                    return response.blob(); // Recibe el ZIP físico creado por tu python
+                    if (!response.ok) throw new Error();
+                    return response.json();
                 })
-                .then(blob => {
-                    // Descarga automática del paquete ZIP en tu carpeta de Descargas de la PC
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = "MBG_MUSIC_PACK.zip";
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
-                    printLog('✓ ¡Pack descargado con éxito en tu PC!', 'text-success');
+                .then(data => {
+                    if (data.status === 'success') {
+                        endProgressBar(progressInterval, true);
+                        printLog(`✓ ${data.message}`, 'text-success');
+                    } else {
+                        throw new Error(data.message);
+                    }
                 })
                 .catch(error => {
-                    printLog('! Error: Servidor local desconectado. ¿Tenés el srver.py abierto?', 'text-error');
+                    endProgressBar(progressInterval, false);
+                    printLog('! Error de conexión o proceso. ¿Iniciaste el server.py?', 'text-error');
                 })
                 .finally(() => {
                     mainBtn.disabled = false;
