@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MBG STVDIO — DOWNLOADER</title>
+    <title>MBG STVDIO — DOWNLOADER SYSTEM</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -16,15 +16,15 @@
     <main class="downloader-card">
         <header class="brand-header">
             <h1>MBG STVDIO</h1>
-            <p class="subtitle">// DIRECT MOBILE DOWNLOADER</p>
+            <p class="subtitle" id="system-mode">DETECTANDO ENTORNO...</p>
         </header>
         
         <div class="input-field">
-            <input type="text" id="target-url" placeholder="Pegá el link de la canción de YouTube" autocomplete="off">
+            <input type="text" id="target-url" placeholder="Pegá el enlace de YouTube o Playlist" autocomplete="off">
             <span class="line-border"></span>
         </div>
 
-        <button id="trigger-btn" class="btn-main" onclick="handleDownload()">PROCESAR VIDEO</button>
+        <button id="trigger-btn" class="btn-main" onclick="handleDownload()">DESCARGAR</button>
 
         <div class="progress-container" id="loading-zone" style="display: none;">
             <div class="progress-bar-wrapper">
@@ -36,21 +36,28 @@
         <div class="console-output" id="terminal-screen">
             <p class="log-line text-muted">// Esperando enlace...</p>
         </div>
-
-        <div id="download-box" style="display: none; margin-top: 20px; text-align: center;">
-            <a href="#" id="direct-download-link" class="btn-setup" style="display: block; background: #00ff66; color: #000; box-shadow: 0 0 15px #00ff66; font-weight: bold; text-decoration: none; padding: 12px; border-radius: 8px;">
-                📥 DESCARGAR MP3 EN TU TELÉFONO
-            </a>
-        </div>
     </main>
 
     <script>
+        // Detector de entorno: iOS (iPhone/iPad) o PC
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        
+        const modeText = document.getElementById('system-mode');
         const mainBtn = document.getElementById('trigger-btn');
         const loadingZone = document.getElementById('loading-zone');
         const statusBar = document.getElementById('status-bar');
         const statusPercentage = document.getElementById('status-percentage');
-        const downloadBox = document.getElementById('download-box');
-        const downloadLink = document.getElementById('direct-download-link');
+
+        // Configuración inicial según el dispositivo detectado
+        if (isIOS) {
+            modeText.innerText = "MOBILE IOS SYSTEM";
+            mainBtn.innerText = "DESCARGAR EN IPHONE";
+            printLog('// Modo iPhone activo. Se usará el motor SW-DLT.', 'text-info');
+        } else {
+            modeText.innerText = "PC CORE SYSTEM";
+            mainBtn.innerText = "DESCARGAR EN PC";
+            printLog('// Modo PC activo. Listo para conectar con server.py.', 'text-info');
+        }
 
         function printLog(text, type = '') {
             const screen = document.getElementById('terminal-screen');
@@ -70,17 +77,17 @@
             }
             let progress = 0;
             const interval = setInterval(() => {
-                if (progress >= 90) {
+                if (progress >= 95) {
                     clearInterval(interval);
                 } else {
-                    progress += Math.floor(Math.random() * 15) + 5;
-                    if(progress > 90) progress = 90;
+                    progress += Math.floor(Math.random() * 6) + 2;
+                    if(progress > 95) progress = 95;
                     if (statusBar && statusPercentage) {
                         statusBar.style.width = `${progress}%`;
                         statusPercentage.innerText = `${progress}%`;
                     }
                 }
-            }, 150);
+            }, 400);
             return interval;
         }
 
@@ -91,7 +98,7 @@
                 statusPercentage.innerText = "100%";
                 setTimeout(() => {
                     if (loadingZone) loadingZone.style.display = "none";
-                }, 1000);
+                }, 1500);
             } else {
                 if (loadingZone) loadingZone.style.display = "none";
             }
@@ -100,63 +107,54 @@
         function handleDownload() {
             const urlInput = document.getElementById('target-url').value.trim();
             if (!urlInput) {
-                printLog('! Error: Introduce un enlace.', 'text-error');
+                printLog('! Error: Introduce un enlace válido.', 'text-error');
                 return;
             }
 
-            // Cobalt procesa videos individuales. Si es playlist, frena.
-            if (urlInput.includes('list=') && !urlInput.includes('watch?v=')) {
-                printLog('! Las Playlists enteras no se pueden procesar por web.', 'text-error');
-                printLog('// Copiá el enlace del tema individual.', 'text-info');
-                return;
-            }
+            if (isIOS) {
+                // ==========================================
+                // LÓGICA PARA IPHONE (MANDAR AL ATAJO)
+                // ==========================================
+                printLog('> Despertando motor nativo SW-DLT...', 'text-success');
+                const shortcutUrl = `shortcuts://run-shortcut?name=SW-DLT&input=${encodeURIComponent(urlInput)}`;
+                
+                setTimeout(() => { 
+                    window.location.href = shortcutUrl; 
+                }, 500);
 
-            mainBtn.disabled = true;
-            downloadBox.style.display = "none";
-            printLog('> Enviando peticion a Cobalt API...', 'text-info');
-            const progressInterval = simulateProgressBar();
+            } else {
+                // ==========================================
+                // LÓGICA PARA PC (MANDAR AL SERVER.PY LOCAL)
+                // ==========================================
+                mainBtn.disabled = true;
+                printLog('> Conectando con el núcleo central (server.py)...', 'text-info');
+                const progressInterval = simulateProgressBar();
 
-            // Petición POST estructurada según la documentación oficial de Cobalt
-            fetch('https://api.cobalt.tools/api/json', {
-                method: 'POST',
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    url: urlInput,
-                    filenamePattern: 'basic',
-                    downloadMode: 'audio', // Forzamos a que extraiga solo el MP3/Audio
-                    audioFormat: 'mp3',
-                    audioBitrate: '192'
+                fetch('http://localhost:5000/download', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: urlInput })
                 })
-            })
-            .then(res => {
-                if (!res.ok) throw new Error();
-                return res.json();
-            })
-            .then(data => {
-                // Cobalt responde con un estado 'stream' o 'redirect' que contiene la URL directa del archivo
-                if (data.status === 'stream' || data.status === 'redirect') {
-                    endProgressBar(progressInterval, true);
-                    printLog('✓ ¡Audio procesado correctamente!', 'text-success');
-                    
-                    // Clavamos la URL directa de descarga en el botón verde
-                    downloadLink.href = data.url;
-                    downloadBox.style.display = "block";
-                } else if (data.status === 'error') {
-                    throw new Error(data.text);
-                } else {
-                    throw new Error();
-                }
-            })
-            .catch(err => {
-                endProgressBar(progressInterval, false);
-                printLog('! Error en el servidor de Cobalt o link caído.', 'text-error');
-            })
-            .finally(() => {
-                mainBtn.disabled = false;
-            });
+                .then(response => {
+                    if (!response.ok) throw new Error();
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 'success') {
+                        endProgressBar(progressInterval, true);
+                        printLog(`✓ Completado: ${data.message}`, 'text-success');
+                    } else {
+                        throw new Error(data.message);
+                    }
+                })
+                .catch(error => {
+                    endProgressBar(progressInterval, false);
+                    printLog('! Error: No se pudo conectar. ¿Iniciaste el server.py en la PC?', 'text-error');
+                })
+                .finally(() => {
+                    mainBtn.disabled = false;
+                });
+            }
         }
     </script>
 </body>
