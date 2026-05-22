@@ -73,14 +73,14 @@
                 if (progress >= 90) {
                     clearInterval(interval);
                 } else {
-                    progress += Math.floor(Math.random() * 10) + 5;
+                    progress += Math.floor(Math.random() * 15) + 5;
                     if(progress > 90) progress = 90;
                     if (statusBar && statusPercentage) {
                         statusBar.style.width = `${progress}%`;
                         statusPercentage.innerText = `${progress}%`;
                     }
                 }
-            }, 200);
+            }, 150);
             return interval;
         }
 
@@ -97,20 +97,6 @@
             }
         }
 
-        // Extractor de ID ultra limpio (soporta music.youtube, shorts, links cortos)
-        function getYouTubeID(url) {
-            url = url.trim();
-            if (url.includes('youtu.be/')) {
-                return url.split('youtu.be/')[1].split(/[?#]/)[0];
-            }
-            if (url.includes('v=')) {
-                return url.split('v=')[1].split('&')[0].split('#')[0];
-            }
-            const regExp = /(?:v|embed|shorts)\/([a-zA-Z0-9_-]{11})/;
-            const match = url.match(regExp);
-            return (match && match[1]) ? match[1] : null;
-        }
-
         function handleDownload() {
             const urlInput = document.getElementById('target-url').value.trim();
             if (!urlInput) {
@@ -118,48 +104,59 @@
                 return;
             }
 
-            // Bloqueo de playlist (las APIs web libres solo convierten de a 1 video)
-            if (urlInput.includes('list=')) {
-                printLog('! Las Playlists no se pueden convertir directo en la web.', 'text-error');
-                printLog('// Copiá el enlace de los temas por separado.', 'text-info');
-                return;
-            }
-
-            const videoID = getYouTubeID(urlInput);
-            if (!videoID) {
-                printLog('! Error: Enlace no reconocido.', 'text-error');
+            // Cobalt procesa videos individuales. Si es playlist, frena.
+            if (urlInput.includes('list=') && !urlInput.includes('watch?v=')) {
+                printLog('! Las Playlists enteras no se pueden procesar por web.', 'text-error');
+                printLog('// Copiá el enlace del tema individual.', 'text-info');
                 return;
             }
 
             mainBtn.disabled = true;
             downloadBox.style.display = "none";
-            printLog('> Extrayendo audio en la nube...', 'text-info');
+            printLog('> Enviando peticion a Cobalt API...', 'text-info');
             const progressInterval = simulateProgressBar();
 
-            // API externa libre de conversión MP3 directa
-            const convertUrl = `https://api.deat.nu/download/mp3?id=${videoID}`;
-
-            // Validamos que el archivo esté listo
-            fetch(convertUrl)
-                .then(res => {
-                    if (res.ok) {
-                        endProgressBar(progressInterval, true);
-                        printLog('✓ ¡Audio listo para descargar!', 'text-success');
-                        
-                        // Le clavamos el link directo al botón verde
-                        downloadLink.href = convertUrl;
-                        downloadBox.style.display = "block";
-                    } else {
-                        throw new Error();
-                    }
+            // Petición POST estructurada según la documentación oficial de Cobalt
+            fetch('https://api.cobalt.tools/api/json', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    url: urlInput,
+                    filenamePattern: 'basic',
+                    downloadMode: 'audio', // Forzamos a que extraiga solo el MP3/Audio
+                    audioFormat: 'mp3',
+                    audioBitrate: '192'
                 })
-                .catch(() => {
-                    endProgressBar(progressInterval, false);
-                    printLog('! Servidor ocupado. Intentá de nuevo en unos segundos.', 'text-error');
-                })
-                .finally(() => {
-                    mainBtn.disabled = false;
-                });
+            })
+            .then(res => {
+                if (!res.ok) throw new Error();
+                return res.json();
+            })
+            .then(data => {
+                // Cobalt responde con un estado 'stream' o 'redirect' que contiene la URL directa del archivo
+                if (data.status === 'stream' || data.status === 'redirect') {
+                    endProgressBar(progressInterval, true);
+                    printLog('✓ ¡Audio procesado correctamente!', 'text-success');
+                    
+                    // Clavamos la URL directa de descarga en el botón verde
+                    downloadLink.href = data.url;
+                    downloadBox.style.display = "block";
+                } else if (data.status === 'error') {
+                    throw new Error(data.text);
+                } else {
+                    throw new Error();
+                }
+            })
+            .catch(err => {
+                endProgressBar(progressInterval, false);
+                printLog('! Error en el servidor de Cobalt o link caído.', 'text-error');
+            })
+            .finally(() => {
+                mainBtn.disabled = false;
+            });
         }
     </script>
 </body>
