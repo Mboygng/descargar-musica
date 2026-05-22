@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MBG STVDIO — DOWNLOADER SYSTEM</title>
+    <title>MBG STVDIO — DOWNLOADER</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -16,15 +16,15 @@
     <main class="downloader-card">
         <header class="brand-header">
             <h1>MBG STVDIO</h1>
-            <p class="subtitle" id="system-mode">DETECTANDO DISPOSITIVO...</p>
+            <p class="subtitle">// DIRECT MOBILE DOWNLOADER</p>
         </header>
         
         <div class="input-field">
-            <input type="text" id="target-url" placeholder="Pegá el enlace de YouTube o Playlist" autocomplete="off">
+            <input type="text" id="target-url" placeholder="Pegá el link de la canción de YouTube" autocomplete="off">
             <span class="line-border"></span>
         </div>
 
-        <button id="trigger-btn" class="btn-main" onclick="handleDownload()">DESCARGAR</button>
+        <button id="trigger-btn" class="btn-main" onclick="handleDownload()">PROCESAR VIDEO</button>
 
         <div class="progress-container" id="loading-zone" style="display: none;">
             <div class="progress-bar-wrapper">
@@ -37,31 +37,20 @@
             <p class="log-line text-muted">// Esperando enlace...</p>
         </div>
 
-        <div id="ios-download-container" style="display: none; margin-top: 15px; text-align: center;">
-            <a href="#" id="ios-direct-link" class="btn-setup" style="display: block; background: #00ff66; color: #000; box-shadow: 0 0 15px #00ff66;">
-                📥 GUARDAR MP3 EN IPHONE
+        <div id="download-box" style="display: none; margin-top: 20px; text-align: center;">
+            <a href="#" id="direct-download-link" class="btn-setup" style="display: block; background: #00ff66; color: #000; box-shadow: 0 0 15px #00ff66; font-weight: bold; text-decoration: none; padding: 12px; border-radius: 8px;">
+                📥 DESCARGAR MP3 EN TU TELÉFONO
             </a>
         </div>
     </main>
 
     <script>
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-        
-        const modeText = document.getElementById('system-mode');
         const mainBtn = document.getElementById('trigger-btn');
         const loadingZone = document.getElementById('loading-zone');
         const statusBar = document.getElementById('status-bar');
         const statusPercentage = document.getElementById('status-percentage');
-        const iosContainer = document.getElementById('ios-download-container');
-        const iosLink = document.getElementById('ios-direct-link');
-
-        if (isIOS) {
-            modeText.innerText = "MOBILE IOS SYSTEM";
-            mainBtn.innerText = "PROCESAR EN IPHONE";
-        } else {
-            modeText.innerText = "PC CORE SYSTEM";
-            mainBtn.innerText = "DESCARGAR EN PC";
-        }
+        const downloadBox = document.getElementById('download-box');
+        const downloadLink = document.getElementById('direct-download-link');
 
         function printLog(text, type = '') {
             const screen = document.getElementById('terminal-screen');
@@ -84,14 +73,14 @@
                 if (progress >= 90) {
                     clearInterval(interval);
                 } else {
-                    progress += Math.floor(Math.random() * 12) + 3;
+                    progress += Math.floor(Math.random() * 10) + 5;
                     if(progress > 90) progress = 90;
                     if (statusBar && statusPercentage) {
                         statusBar.style.width = `${progress}%`;
                         statusPercentage.innerText = `${progress}%`;
                     }
                 }
-            }, 300);
+            }, 200);
             return interval;
         }
 
@@ -102,95 +91,75 @@
                 statusPercentage.innerText = "100%";
                 setTimeout(() => {
                     if (loadingZone) loadingZone.style.display = "none";
-                }, 1500);
+                }, 1000);
             } else {
                 if (loadingZone) loadingZone.style.display = "none";
             }
         }
 
-        // Extractor de ID de YouTube
+        // Extractor de ID ultra limpio (soporta music.youtube, shorts, links cortos)
         function getYouTubeID(url) {
-            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            url = url.trim();
+            if (url.includes('youtu.be/')) {
+                return url.split('youtu.be/')[1].split(/[?#]/)[0];
+            }
+            if (url.includes('v=')) {
+                return url.split('v=')[1].split('&')[0].split('#')[0];
+            }
+            const regExp = /(?:v|embed|shorts)\/([a-zA-Z0-9_-]{11})/;
             const match = url.match(regExp);
-            return (match && match[2].length === 11) ? match[2] : null;
+            return (match && match[1]) ? match[1] : null;
         }
 
         function handleDownload() {
             const urlInput = document.getElementById('target-url').value.trim();
             if (!urlInput) {
-                printLog('! Error: Introduce un enlace válido.', 'text-error');
+                printLog('! Error: Introduce un enlace.', 'text-error');
                 return;
             }
 
-            if (isIOS) {
-                const videoID = getYouTubeID(urlInput);
-                if (!videoID) {
-                    printLog('! Error: El enlace de YouTube no es válido.', 'text-error');
-                    return;
-                }
+            // Bloqueo de playlist (las APIs web libres solo convierten de a 1 video)
+            if (urlInput.includes('list=')) {
+                printLog('! Las Playlists no se pueden convertir directo en la web.', 'text-error');
+                printLog('// Copiá el enlace de los temas por separado.', 'text-info');
+                return;
+            }
 
-                mainBtn.disabled = true;
-                iosContainer.style.display = "none";
-                printLog('> Procesando conversión en la nube...', 'text-info');
-                const progressInterval = simulateProgressBar();
+            const videoID = getYouTubeID(urlInput);
+            if (!videoID) {
+                printLog('! Error: Enlace no reconocido.', 'text-error');
+                return;
+            }
 
-                // API pública y estable de conversión MP3 de alta velocidad
-                const apiUrl = `https://api.vexdh.com/v1/download/mp3?id=${videoID}`;
+            mainBtn.disabled = true;
+            downloadBox.style.display = "none";
+            printLog('> Extrayendo audio en la nube...', 'text-info');
+            const progressInterval = simulateProgressBar();
 
-                // Validamos que el servidor responda bien
-                fetch(apiUrl)
-                    .then(res => {
-                        if(res.ok) {
-                            endProgressBar(progressInterval, true);
-                            printLog('✓ ¡Conversión exitosa!', 'text-success');
-                            
-                            // Le pasamos el link directo de descarga al botón verde
-                            iosLink.href = apiUrl;
-                            iosContainer.style.display = "block";
-                            printLog('👇 Tocá el botón verde de abajo para guardar.', 'text-success');
-                        } else {
-                            throw new Error();
-                        }
-                    })
-                    .catch(() => {
-                        endProgressBar(progressInterval, false);
-                        printLog('! Error en el servidor de conversión. Probá de nuevo.', 'text-error');
-                    })
-                    .finally(() => {
-                        mainBtn.disabled = false;
-                    });
+            // API externa libre de conversión MP3 directa
+            const convertUrl = `https://api.deat.nu/download/mp3?id=${videoID}`;
 
-            } else {
-                // Modo PC clásico con tu server.py
-                mainBtn.disabled = true;
-                printLog('> Conectando con el núcleo local de la PC...', 'text-info');
-                const progressInterval = simulateProgressBar();
-
-                fetch('http://localhost:5000/download', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: urlInput })
-                })
-                .then(response => {
-                    if (!response.ok) throw new Error();
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.status === 'success') {
+            // Validamos que el archivo esté listo
+            fetch(convertUrl)
+                .then(res => {
+                    if (res.ok) {
                         endProgressBar(progressInterval, true);
-                        printLog(`✓ ${data.message}`, 'text-success');
+                        printLog('✓ ¡Audio listo para descargar!', 'text-success');
+                        
+                        // Le clavamos el link directo al botón verde
+                        downloadLink.href = convertUrl;
+                        downloadBox.style.display = "block";
                     } else {
-                        throw new Error(data.message);
+                        throw new Error();
                     }
                 })
-                .catch(error => {
+                .catch(() => {
                     endProgressBar(progressInterval, false);
-                    printLog('! Error de conexión. ¿Iniciaste el server.py?', 'text-error');
+                    printLog('! Servidor ocupado. Intentá de nuevo en unos segundos.', 'text-error');
                 })
                 .finally(() => {
                     mainBtn.disabled = false;
                 });
-            }
         }
     </script>
 </body>
